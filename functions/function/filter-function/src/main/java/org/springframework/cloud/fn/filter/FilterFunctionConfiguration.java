@@ -20,7 +20,9 @@ import java.util.function.Function;
 
 import reactor.core.publisher.Flux;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.sleuth.instrument.messaging.MessagingSleuthOperators;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.transformer.ExpressionEvaluatingTransformer;
@@ -34,13 +36,32 @@ import org.springframework.messaging.Message;
 @EnableConfigurationProperties(FilterFunctionProperties.class)
 public class FilterFunctionConfiguration {
 
+	//@Bean
+	//public Function<Flux<Message<?>>, Flux<Message<?>>> filterFunction(
+	//		ExpressionEvaluatingTransformer filterExpressionEvaluatingTransformer) {
+	//
+	//	return flux ->
+	//			flux.filter((message) ->
+	//					(Boolean) filterExpressionEvaluatingTransformer.transform(message).getPayload());
+	//}
+
 	@Bean
 	public Function<Flux<Message<?>>, Flux<Message<?>>> filterFunction(
-			ExpressionEvaluatingTransformer filterExpressionEvaluatingTransformer) {
-
+			ExpressionEvaluatingTransformer filterExpressionEvaluatingTransformer, BeanFactory beanFactory) {
 		return flux ->
-				flux.filter((message) ->
-						(Boolean) filterExpressionEvaluatingTransformer.transform(message).getPayload());
+				// message headers
+				// b3 = 11111111-22222222-1
+				// b3 = traceid-spanid-sampled
+				flux.map(message -> MessagingSleuthOperators.forInputMessage(beanFactory, message))
+						// ^^^ message contains header
+						// key = traceHandlerParentSpan, value - parentSpan -> spanId = 22222222
+						// key = Span.class, value - child span -> spanId = 3333333
+						.filter((message) -> (Boolean) filterExpressionEvaluatingTransformer.transform(message).getPayload())
+						.map(message -> MessagingSleuthOperators.handleOutputMessage(beanFactory, message));
+						// ^^^ we instrument the outbound message with tracing headers
+						// message headers
+						// b3 = 11111111-33333333-1
+						// b3 = traceid-spanid-sampled
 	}
 
 	@Bean
