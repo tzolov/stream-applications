@@ -57,7 +57,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-sleuth-instrumentation</artifactId>
-            <version>3.0.3</version>
+            <version>3.0.4-SNAPSHOT</version>
 <!--            <scope>compile</scope>-->
         </dependency>
     </dependencies>

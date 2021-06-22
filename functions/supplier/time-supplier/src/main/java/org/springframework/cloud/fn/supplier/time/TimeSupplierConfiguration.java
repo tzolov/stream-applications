@@ -20,10 +20,14 @@ import java.util.Date;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * @author Soby Chacko
@@ -32,10 +36,34 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(TimeSupplierProperties.class)
 public class TimeSupplierConfiguration {
 
+	private static final Logger log = LoggerFactory.getLogger(TimeSupplierConfiguration.class);
+
+	// TODO: OLEG OLEG OLEG - if we don't make this return a `Message<>` the SimpleFunctionRegsitry#apply
+	// will remove all the headers cause the output type is String even though we instrumented the message
+
+	/*
+	@Override
+		public Object apply(Object input) {
+			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
+				logger.debug("Invoking function " + this);
+			}
+			Object result = this.doApply(input);
+
+			if (result != null && this.outputType != null) {
+				result = this.convertOutputIfNecessary(result, this.outputType, this.expectedOutputContentType);
+			}
+
+			return result;
+		}
+	 */
+
 	@Bean
-	public Supplier<String> timeSupplier(TimeSupplierProperties timeSupplierProperties) {
+	public Supplier<Message<String>> timeSupplier(TimeSupplierProperties timeSupplierProperties) {
 		FastDateFormat fastDateFormat = FastDateFormat.getInstance(timeSupplierProperties.getDateFormat());
-		return () -> fastDateFormat.format(new Date());
+		return () -> {
+			log.info("HELLO");
+			return MessageBuilder.withPayload(fastDateFormat.format(new Date())).build();
+		};
 	}
 
 }

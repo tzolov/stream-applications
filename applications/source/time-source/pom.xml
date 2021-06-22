@@ -104,4 +104,13 @@
             <url>https://repo.spring.io/milestone</url>
         </pluginRepository>
     </pluginRepositories>
+
+    <profiles>
+        <profile>
+            <id>debug</id>
+            <modules>
+                <module>apps</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
